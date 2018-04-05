@@ -195,27 +195,13 @@ object Huffman {
     * into a sequence of bits.
     */
   def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
-    def iterOverTree(pTree: CodeTree, accumulator: List[Bit]): List[(Char, List[Bit])] = {
-      pTree match {
-        case (pTree: Fork) => {
-          val left: List[(Char, List[Bit])] = iterOverTree(pTree.left, 0 :: accumulator)
-          val right: List[(Char, List[Bit])] = iterOverTree(pTree.right, 1 :: accumulator)
-          left ::: right
-        }
-        case (pTree: Leaf) => List((pTree.char, accumulator))
-      }
+    def lookup(tree: CodeTree)(c: Char): List[Bit] = tree match {
+      case Leaf(_, _) => List()
+      case Fork(left, right, _, _) if chars(left).contains(c) => 0 :: lookup(left)(c)
+      case Fork(left, right, _, _) => 1 :: lookup(right)(c)
     }
-    val statistics: Map[Char, List[Bit]] = iterOverTree(tree, List()).toMap
-    def iterOverChars(pText: List[Char], statistics: Map[Char, List[Bit]]): List[Bit] = {
-      pText match {
-        case (head :: tail) =>
-          val bits: List[Bit] = statistics.get(head).get
-          bits ::: iterOverChars(tail, statistics)
-        case (Nil) => List()
-      }
-    }
-    iterOverChars(text, statistics)
 
+    text flatMap lookup(tree)
   }
 
   // Part 4b: Encoding using code table
